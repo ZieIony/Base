@@ -1,3 +1,5 @@
 package com.github.zieiony.base.arch
 
-interface BaseState
+import java.io.Serializable
+
+interface BaseState : Serializable

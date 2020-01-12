@@ -8,10 +8,10 @@ class ViewModelStateDelegate<T : Serializable?> : ReadWriteProperty<BaseViewMode
 
     override fun getValue(thisRef: BaseViewModel<*>, property: KProperty<*>): T {
         val key = property.name
-        return thisRef.savedStateHandle!!.get<T>(key) as T
+        return thisRef.savedStateHandle.get<T>(key) as T
     }
 
     override fun setValue(thisRef: BaseViewModel<*>, property: KProperty<*>, value: T) {
-        thisRef.savedStateHandle!!.set(property.name, value)
+        thisRef.savedStateHandle.set(property.name, value)
     }
 }
