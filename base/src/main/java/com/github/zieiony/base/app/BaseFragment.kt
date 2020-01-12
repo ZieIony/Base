@@ -17,6 +17,8 @@ abstract class BaseFragment : Fragment, Navigator {
 
     private val parentNavigator: Navigator?
 
+    private var onCreates = 0
+
     override fun getParentNavigator(): Navigator? {
         return parentNavigator
     }
@@ -32,6 +34,9 @@ abstract class BaseFragment : Fragment, Navigator {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        if (savedInstanceState != null)
+            onCreates++
+        onCreates++     // second onCreateView or first but with savedInstanceState
         javaClass.getAnnotation(ScreenAnnotation::class.java)?.let {
             if (it.layout != 0)
                 return inflater.inflate(it.layout, container, false)
@@ -45,6 +50,15 @@ abstract class BaseFragment : Fragment, Navigator {
             if (it.title != 0)
                 title = context.resources.getString(it.title)
         }
+    }
+
+    open fun onColdStart() {
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (onCreates <= 1)
+            onColdStart()
     }
 
     override fun navigateTo(fragment: BaseFragment) {
