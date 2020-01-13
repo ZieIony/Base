@@ -29,6 +29,11 @@ abstract class BaseFragment : Fragment, Navigator {
         arguments = Bundle()
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        childFragmentManager.fragmentFactory = NavigatorFragmentFactory(this)
+        super.onCreate(savedInstanceState)
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
