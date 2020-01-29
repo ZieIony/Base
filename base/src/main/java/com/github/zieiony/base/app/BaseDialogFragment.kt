@@ -11,12 +11,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 
 
-abstract class BaseDialogFragment : DialogFragment,
-    Navigator {
+abstract class BaseDialogFragment : DialogFragment, Navigator {
 
     var title: String? = null
 
     private val parentNavigator: Navigator?
+
+    private var coldStart = true
 
     override fun getParentNavigator(): Navigator? {
         return parentNavigator
@@ -28,11 +29,18 @@ abstract class BaseDialogFragment : DialogFragment,
         arguments = Bundle()
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        childFragmentManager.fragmentFactory = NavigatorFragmentFactory(this)
+        super.onCreate(savedInstanceState)
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        if (savedInstanceState != null)
+            coldStart = false
         javaClass.getAnnotation(ScreenAnnotation::class.java)?.let {
             if (it.layout != 0)
                 return inflater.inflate(it.layout, container, false)
@@ -45,6 +53,17 @@ abstract class BaseDialogFragment : DialogFragment,
         javaClass.getAnnotation(ScreenAnnotation::class.java)?.let {
             if (it.title != 0)
                 title = context.resources.getString(it.title)
+        }
+    }
+
+    open fun onColdStart() {
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (coldStart) {
+            onColdStart()
+            coldStart = false
         }
     }
 
