@@ -3,6 +3,8 @@ package com.github.zieiony.base.app
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.Fragment
 import java.io.Serializable
 
 
@@ -41,6 +43,14 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
         }
     }
 
+    override fun onNavigateTo(fragment: Fragment): Boolean {
+        if (fragment is DialogFragment) {
+            fragment.show(supportFragmentManager, DIALOG_TAG)
+            return true
+        }
+        return false
+    }
+
     override fun onNavigateTo(intent: Intent): Boolean {
         startActivity(intent)
         return true
@@ -64,6 +74,7 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
     }
 
     companion object {
-        const val FRAGMENT_RESULT = "fragmentResult"
+        private const val FRAGMENT_RESULT = "fragmentResult"
+        private const val DIALOG_TAG = "dialog"
     }
 }

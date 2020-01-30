@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -67,12 +68,18 @@ abstract class BaseFragment : Fragment, Navigator {
         }
     }
 
-    override fun navigateTo(fragment: BaseFragment) {
-        if (!onNavigateTo(fragment))
-            getParentNavigator()!!.navigateTo(fragment)
+    override fun onNavigateTo(fragment: Fragment): Boolean {
+        if (fragment is DialogFragment) {
+            fragment.show(childFragmentManager, DIALOG_TAG)
+            return true
+        }
+        return false
     }
 
-    fun <T : ViewModel> getViewModel(c: Class<T>, factory: ViewModelProvider.Factory? = null): T {
-        return ViewModelProviders.of(this, factory).get(c)
+    fun <T : ViewModel> getViewModel(c: Class<T>, factory: ViewModelProvider.Factory? = null) =
+        ViewModelProviders.of(this, factory).get(c)
+
+    companion object {
+        private const val DIALOG_TAG = "dialog"
     }
 }

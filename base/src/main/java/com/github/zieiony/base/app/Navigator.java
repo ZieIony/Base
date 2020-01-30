@@ -2,6 +2,8 @@ package com.github.zieiony.base.app;
 
 import android.content.Intent;
 
+import androidx.fragment.app.Fragment;
+
 import java.io.Serializable;
 
 public interface Navigator {
@@ -9,12 +11,12 @@ public interface Navigator {
         return null;
     }
 
-    default void navigateTo(BaseFragment fragment) {
+    default void navigateTo(Fragment fragment) {
         if (!onNavigateTo(fragment))
             getParentNavigator().navigateTo(fragment);
     }
 
-    default boolean onNavigateTo(BaseFragment fragment) {
+    default boolean onNavigateTo(Fragment fragment) {
         return false;
     }
 

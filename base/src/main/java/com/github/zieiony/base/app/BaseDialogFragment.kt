@@ -67,12 +67,6 @@ abstract class BaseDialogFragment : DialogFragment, Navigator {
         }
     }
 
-    override fun navigateTo(fragment: BaseFragment) {
-        if (!onNavigateTo(fragment))
-            getParentNavigator()!!.navigateTo(fragment)
-    }
-
-    fun <T : ViewModel> getViewModel(c: Class<T>, factory: ViewModelProvider.Factory? = null): T {
-        return ViewModelProviders.of(this, factory).get(c)
-    }
+    fun <T : ViewModel> getViewModel(c: Class<T>, factory: ViewModelProvider.Factory? = null) =
+        ViewModelProviders.of(this, factory).get(c)
 }
