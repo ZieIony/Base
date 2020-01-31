@@ -44,7 +44,7 @@ public interface Navigator {
     }
 
     default <T extends Serializable> boolean onNavigateBack(T result) {
-        return false;
+        return onNavigateBack();
     }
 
     default <T extends Serializable> T getResult() {

@@ -67,6 +67,11 @@ abstract class BaseDialogFragment : DialogFragment, Navigator {
         }
     }
 
+    override fun onNavigateBack(): Boolean {
+        dismiss()
+        return true
+    }
+
     fun <T : ViewModel> getViewModel(c: Class<T>, factory: ViewModelProvider.Factory? = null) =
         ViewModelProviders.of(this, factory).get(c)
 }
