@@ -34,20 +34,15 @@ public interface Navigator {
             getParentNavigator().navigateBack();
     }
 
-    default <T extends Serializable> void navigateBack(T result) {
-        if (!onNavigateBack(result))
-            getParentNavigator().navigateBack(result);
-    }
-
     default boolean onNavigateBack() {
         return false;
     }
 
-    default <T extends Serializable> boolean onNavigateBack(T result) {
-        return onNavigateBack();
-    }
-
     default <T extends Serializable> T getResult() {
         return getParentNavigator().getResult();
+    }
+
+    default <T extends Serializable> void setResult(T result) {
+        getParentNavigator().setResult(result);
     }
 }

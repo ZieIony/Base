@@ -11,9 +11,6 @@ import java.io.Serializable
 abstract class BaseActivity : AppCompatActivity(), Navigator {
 
     private var _result: Serializable? = null
-    override fun <T : Serializable?> getResult(): T? {
-        return _result as T?
-    }
 
     private var coldStart = true
 
@@ -57,15 +54,16 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
     }
 
     override fun onNavigateBack(): Boolean {
-        _result = null
         onBackPressed()
         return true
     }
 
-    override fun <T : Serializable> onNavigateBack(result: T?): Boolean {
+    override fun <T : Serializable?> getResult(): T? {
+        return _result as T?
+    }
+
+    override fun <T : Serializable?> setResult(result: T) {
         _result = result
-        onBackPressed()
-        return true
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

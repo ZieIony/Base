@@ -10,9 +10,12 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
+import java.io.Serializable
 
 
 abstract class BaseFragment : Fragment, Navigator {
+
+    private var _result: Serializable? = null
 
     var title: String? = null
 
@@ -32,6 +35,9 @@ abstract class BaseFragment : Fragment, Navigator {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         childFragmentManager.fragmentFactory = NavigatorFragmentFactory(this)
+
+        _result = savedInstanceState?.getSerializable(FRAGMENT_RESULT)
+
         super.onCreate(savedInstanceState)
     }
 
@@ -76,10 +82,19 @@ abstract class BaseFragment : Fragment, Navigator {
         return false
     }
 
+    override fun <T : Serializable?> getResult(): T? {
+        return _result as T?
+    }
+
+    override fun <T : Serializable?> setResult(result: T) {
+        _result = result
+    }
+
     fun <T : ViewModel> getViewModel(c: Class<T>, factory: ViewModelProvider.Factory? = null) =
         ViewModelProviders.of(this, factory).get(c)
 
     companion object {
+        private const val FRAGMENT_RESULT = "fragmentResult"
         private const val DIALOG_TAG = "dialog"
     }
 }
