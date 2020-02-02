@@ -1,6 +1,7 @@
 package com.github.zieiony.base.app
 
 import android.content.Intent
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.DialogFragment
@@ -9,6 +10,8 @@ import java.io.Serializable
 
 
 abstract class BaseActivity : AppCompatActivity(), Navigator {
+
+    var icon: Drawable? = null
 
     private var _result: Serializable? = null
 
@@ -22,10 +25,12 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
         super.onCreate(savedInstanceState)
 
         javaClass.getAnnotation(ScreenAnnotation::class.java)?.let {
-            if (it.layout != 0)
-                setContentView(it.layout)
-            if (it.title != 0)
-                title = title
+            if (it.layoutId != 0)
+                setContentView(it.layoutId)
+            if (it.titleId != 0)
+                title = resources.getString(it.titleId)
+            if (it.iconId != 0)
+                icon = resources.getDrawable(it.iconId)
         }
     }
 
@@ -38,6 +43,14 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
             onColdStart()
             coldStart = false
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val result = getResult<Serializable>()
+        if (result != null)
+            if (onResult(result))
+                _result = null
     }
 
     override fun onNavigateTo(fragment: Fragment): Boolean {
@@ -58,12 +71,13 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
         return true
     }
 
-    override fun <T : Serializable?> getResult(): T? {
+    final override fun <T : Serializable?> getResult(): T? {
         return _result as T?
     }
 
-    override fun <T : Serializable?> setResult(result: T) {
-        _result = result
+    final override fun <T : Serializable?> setResult(result: T) {
+        if (result == null || !onResult(result))
+            _result = result
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

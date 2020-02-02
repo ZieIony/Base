@@ -43,6 +43,11 @@ public interface Navigator {
     }
 
     default <T extends Serializable> void setResult(T result) {
-        getParentNavigator().setResult(result);
+        if (result == null || !onResult(result))
+            getParentNavigator().setResult(result);
+    }
+
+    default boolean onResult(Serializable result) {
+        return false;
     }
 }

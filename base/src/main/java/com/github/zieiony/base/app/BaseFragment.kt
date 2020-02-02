@@ -1,6 +1,7 @@
 package com.github.zieiony.base.app
 
 import android.content.Context
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -18,6 +19,8 @@ abstract class BaseFragment : Fragment, Navigator {
     private var _result: Serializable? = null
 
     var title: String? = null
+
+    var icon: Drawable? = null
 
     private val parentNavigator: Navigator?
 
@@ -49,8 +52,8 @@ abstract class BaseFragment : Fragment, Navigator {
         if (savedInstanceState != null)
             coldStart = false
         javaClass.getAnnotation(ScreenAnnotation::class.java)?.let {
-            if (it.layout != 0)
-                return inflater.inflate(it.layout, container, false)
+            if (it.layoutId != 0)
+                return inflater.inflate(it.layoutId, container, false)
         }
         return super.onCreateView(inflater, container, savedInstanceState)
     }
@@ -58,8 +61,10 @@ abstract class BaseFragment : Fragment, Navigator {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         javaClass.getAnnotation(ScreenAnnotation::class.java)?.let {
-            if (it.title != 0)
-                title = context.resources.getString(it.title)
+            if (it.titleId != 0)
+                title = context.resources.getString(it.titleId)
+            if (it.iconId != 0)
+                icon = context.resources.getDrawable(it.iconId)
         }
     }
 
@@ -74,6 +79,14 @@ abstract class BaseFragment : Fragment, Navigator {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        val result = getResult<Serializable>()
+        if (result != null)
+            if (onResult(result))
+                _result = null
+    }
+
     override fun onNavigateTo(fragment: Fragment): Boolean {
         if (fragment is DialogFragment) {
             fragment.show(childFragmentManager, DIALOG_TAG)
@@ -82,12 +95,13 @@ abstract class BaseFragment : Fragment, Navigator {
         return false
     }
 
-    override fun <T : Serializable?> getResult(): T? {
+    final override fun <T : Serializable?> getResult(): T? {
         return _result as T?
     }
 
-    override fun <T : Serializable?> setResult(result: T) {
-        _result = result
+    final override fun <T : Serializable?> setResult(result: T) {
+        if (result == null || !onResult(result))
+            _result = result
     }
 
     fun <T : ViewModel> getViewModel(c: Class<T>, factory: ViewModelProvider.Factory? = null) =
