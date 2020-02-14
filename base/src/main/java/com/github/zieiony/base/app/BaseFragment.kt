@@ -16,8 +16,6 @@ import java.io.Serializable
 
 abstract class BaseFragment : Fragment, Navigator {
 
-    private var _result: Serializable? = null
-
     var title: String? = null
 
     var icon: Drawable? = null
@@ -38,8 +36,6 @@ abstract class BaseFragment : Fragment, Navigator {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         childFragmentManager.fragmentFactory = NavigatorFragmentFactory(this)
-
-        _result = savedInstanceState?.getSerializable(FRAGMENT_RESULT)
 
         super.onCreate(savedInstanceState)
     }
@@ -84,7 +80,7 @@ abstract class BaseFragment : Fragment, Navigator {
         val result = getResult<Serializable>()
         if (result != null)
             if (onResult(result))
-                _result = null
+                setResult(null)
     }
 
     override fun onNavigateTo(fragment: Fragment): Boolean {
@@ -95,20 +91,10 @@ abstract class BaseFragment : Fragment, Navigator {
         return false
     }
 
-    final override fun <T : Serializable?> getResult(): T? {
-        return _result as T?
-    }
-
-    final override fun <T : Serializable?> setResult(result: T) {
-        if (result == null || !onResult(result))
-            _result = result
-    }
-
     fun <T : ViewModel> getViewModel(c: Class<T>, factory: ViewModelProvider.Factory? = null) =
         ViewModelProviders.of(this, factory).get(c)
 
     companion object {
-        private const val FRAGMENT_RESULT = "fragmentResult"
         private const val DIALOG_TAG = "dialog"
     }
 }
