@@ -1,11 +1,11 @@
 package com.github.zieiony.base.app
 
+import android.app.Activity
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.DialogFragment
-import androidx.fragment.app.Fragment
 import java.io.Serializable
 
 
@@ -53,17 +53,35 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
                 _result = null
     }
 
-    override fun onNavigateTo(fragment: Fragment): Boolean {
-        if (fragment is DialogFragment) {
+    override fun onNavigateTo(
+        target: Class<out Any>,
+        arguments: HashMap<String, Serializable>?
+    ): Boolean {
+        if (target.isAssignableFrom(DialogFragment::class.java)) {
+            val fragment = supportFragmentManager.fragmentFactory.instantiate(
+                target.classLoader!!,
+                target.name
+            ) as DialogFragment
+            arguments?.let {
+                val bundle = Bundle()
+                fragment.arguments = bundle
+                it.forEach { entry ->
+                    bundle.putSerializable(entry.key, entry.value)
+                }
+            }
             fragment.show(supportFragmentManager, DIALOG_TAG)
+            return true
+        } else if (target.isAssignableFrom(Activity::class.java)) {
+            val intent = Intent(this, target)
+            arguments?.let {
+                it.forEach { entry ->
+                    intent.putExtra(entry.key, entry.value)
+                }
+            }
+            startActivity(intent)
             return true
         }
         return false
-    }
-
-    override fun onNavigateTo(intent: Intent): Boolean {
-        startActivity(intent)
-        return true
     }
 
     override fun onNavigateBack(): Boolean {
