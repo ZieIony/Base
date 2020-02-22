@@ -14,30 +14,20 @@ import androidx.lifecycle.ViewModelProviders
 import java.io.Serializable
 
 
-abstract class BaseFragment : Fragment, Navigator {
+abstract class BaseFragment() : Fragment(), Navigator {
 
     var title: String? = null
 
     var icon: Drawable? = null
 
-    private val parentNavigator: Navigator?
+    private var parentNavigator: Navigator? = null
 
     private var coldStart = true
 
-    override fun getParentNavigator(): Navigator? {
-        return parentNavigator
-    }
+    override fun getParentNavigator() = parentNavigator
 
-    constructor(parentNavigator: Navigator) : super() {
-        this.parentNavigator = parentNavigator
-
+    init {
         arguments = Bundle()
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        childFragmentManager.fragmentFactory = NavigatorFragmentFactory(this)
-
-        super.onCreate(savedInstanceState)
     }
 
     override fun onCreateView(
@@ -56,6 +46,18 @@ abstract class BaseFragment : Fragment, Navigator {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
+
+        var parent = parentFragment
+        while (parent != null) {
+            if (parent is Navigator) {
+                parentNavigator = parent
+                break
+            }
+            parent = parent.parentFragment
+        }
+        if (parentNavigator == null && activity is Navigator)
+            parentNavigator = activity as Navigator
+
         javaClass.getAnnotation(ScreenAnnotation::class.java)?.let {
             if (it.titleId != 0)
                 title = context.resources.getString(it.titleId)
@@ -83,13 +85,19 @@ abstract class BaseFragment : Fragment, Navigator {
                 setResult(null)
     }
 
+    override fun onDetach() {
+        super.onDetach()
+        parentNavigator = null
+    }
+
     override fun onNavigateTo(
         fragmentClass: Class<out Fragment>,
         arguments: HashMap<String, Serializable>?
     ): Boolean {
         val fragment = childFragmentManager.fragmentFactory.instantiate(
             fragmentClass.classLoader!!,
-            fragmentClass.name)
+            fragmentClass.name
+        )
         arguments?.let {
             val bundle = Bundle()
             fragment.arguments = bundle

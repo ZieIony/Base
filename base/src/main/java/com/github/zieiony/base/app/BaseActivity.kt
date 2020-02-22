@@ -18,8 +18,6 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
     private var coldStart = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        supportFragmentManager.fragmentFactory = NavigatorFragmentFactory(this)
-
         _result = savedInstanceState?.getSerializable(FRAGMENT_RESULT)
 
         super.onCreate(savedInstanceState)
