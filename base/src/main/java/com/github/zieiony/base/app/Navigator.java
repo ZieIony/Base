@@ -1,7 +1,9 @@
 package com.github.zieiony.base.app;
 
+import android.content.Intent;
+
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -11,12 +13,21 @@ public interface Navigator {
         return null;
     }
 
-    default void navigateTo(@NonNull Class<?> target, @Nullable HashMap<String, Serializable> arguments) {
-        if (!onNavigateTo(target, arguments))
-            getParentNavigator().navigateTo(target, arguments);
+    default void navigateTo(@NonNull Class<? extends Fragment> fragment, HashMap<String, Serializable> arguments) {
+        if (!onNavigateTo(fragment, arguments))
+            getParentNavigator().navigateTo(fragment, arguments);
     }
 
-    default boolean onNavigateTo(@NonNull Class<?> target, @Nullable HashMap<String, Serializable> arguments) {
+    default void navigateTo(@NonNull Intent intent) {
+        if (!onNavigateTo(intent))
+            getParentNavigator().navigateTo(intent);
+    }
+
+    default boolean onNavigateTo(@NonNull Class<? extends Fragment> fragment, HashMap<String, Serializable> arguments) {
+        return false;
+    }
+
+    default boolean onNavigateTo(@NonNull Intent intent) {
         return false;
     }
 

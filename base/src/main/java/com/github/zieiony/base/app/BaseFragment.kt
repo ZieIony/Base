@@ -84,7 +84,7 @@ abstract class BaseFragment : Fragment, Navigator {
     }
 
     override fun onNavigateTo(
-        target: Class<out Any>,
+        target: Class<out Fragment>,
         arguments: HashMap<String, Serializable>?
     ): Boolean {
         if (target.isAssignableFrom(DialogFragment::class.java)) {

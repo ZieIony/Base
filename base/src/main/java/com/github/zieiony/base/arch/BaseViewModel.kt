@@ -1,5 +1,7 @@
 package com.github.zieiony.base.arch
 
+import android.content.Intent
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -10,7 +12,7 @@ import java.io.Serializable
 
 open class BaseViewModel<T : BaseState>(
     internal val savedStateHandle: SavedStateHandle
-) : ViewModel(), Navigator {
+) : ViewModel() {
 
     private var _navigator: Navigator? = null
     var navigator: Navigator?
@@ -19,13 +21,16 @@ open class BaseViewModel<T : BaseState>(
             _navigator = value
             _navigator?.let { navigator ->
                 navigationEvents.forEach { event ->
-                    when {
-                        event.result != null -> navigator.setResult(event.result)
-                        event.className == null -> navigator.navigateBack()
-                        else -> navigator.navigateTo(
-                            Class.forName(event.className),
-                            event.arguments
-                        )
+                    when (event) {
+                        is NavigationEvent.ResultNavigationEvent -> navigator.setResult(event.result)
+                        is NavigationEvent.BackNavigationEvent -> navigator.navigateBack()
+                        is NavigationEvent.FragmentNavigationEvent -> {
+                            navigator.navigateTo(
+                                Class.forName(event.className) as Class<out Fragment>,
+                                event.arguments
+                            )
+                        }
+                        is NavigationEvent.IntentNavigationEvent -> navigator.onNavigateTo(event.intent)
                     }
                     navigationEvents.remove(event)
                 }
@@ -50,67 +55,44 @@ open class BaseViewModel<T : BaseState>(
     }
 
 
-    override fun getParentNavigator(): Navigator? {
-        return navigator?.parentNavigator
-    }
-
-    override fun navigateTo(target: Class<out Any>, arguments: HashMap<String, Serializable>?) {
-        if (!onNavigateTo(target, arguments)) {
-            val localNavigator = parentNavigator
-            if (localNavigator == null) {
-                navigationEvents.add(NavigationEvent(target.name, arguments))
-            } else {
-                localNavigator.navigateTo(target, arguments)
-            }
-        }
-    }
-
-    override fun onNavigateTo(
-        target: Class<out Any>,
-        arguments: HashMap<String, Serializable>?
-    ): Boolean {
+    fun navigateTo(
+        target: Class<out Fragment>,
+        arguments: HashMap<String, Serializable?>?
+    ) {
         val localNavigator = navigator
         if (localNavigator == null) {
-            navigationEvents.add(NavigationEvent(target.name, arguments))
-            return true
+            navigationEvents.add(
+                NavigationEvent.FragmentNavigationEvent(target.name, arguments)
+            )
         } else {
-            return localNavigator.onNavigateTo(target, arguments)
+            localNavigator.navigateTo(target, arguments)
         }
     }
 
-    override fun navigateBack() {
+    fun navigateTo(intent: Intent) {
         val localNavigator = navigator
         if (localNavigator == null) {
-            navigationEvents.add(NavigationEvent())
+            navigationEvents.add(NavigationEvent.IntentNavigationEvent(intent))
+        } else {
+            localNavigator.onNavigateTo(intent)
+        }
+    }
+
+    fun navigateBack() {
+        val localNavigator = navigator
+        if (localNavigator == null) {
+            navigationEvents.add(NavigationEvent.BackNavigationEvent)
         } else {
             localNavigator.navigateBack()
         }
     }
 
-    override fun onNavigateBack(): Boolean {
+    fun <T : Serializable?> setResult(result: T?) {
         val localNavigator = navigator
         if (localNavigator == null) {
-            navigationEvents.add(NavigationEvent())
-            return true
-        } else {
-            return localNavigator.onNavigateBack()
-        }
-    }
-
-    override fun <T : Serializable?> getResult(): T? {
-        return null
-    }
-
-    override fun <T : Serializable?> setResult(result: T?) {
-        val localNavigator = navigator
-        if (localNavigator == null) {
-            navigationEvents.add(NavigationEvent(result = result))
+            navigationEvents.add(NavigationEvent.ResultNavigationEvent(result))
         } else {
             localNavigator.setResult(result)
         }
-    }
-
-    override fun onResult(result: Serializable?): Boolean {
-        return false
     }
 }
