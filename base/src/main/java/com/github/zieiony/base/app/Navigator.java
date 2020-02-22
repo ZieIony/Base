@@ -13,9 +13,14 @@ public interface Navigator {
         return null;
     }
 
-    default void navigateTo(@NonNull Class<? extends Fragment> fragment, HashMap<String, Serializable> arguments) {
-        if (!onNavigateTo(fragment, arguments))
-            getParentNavigator().navigateTo(fragment, arguments);
+    default void navigateTo(@NonNull Class<? extends Fragment> fragmentClass, HashMap<String, Serializable> arguments) {
+        if (!onNavigateTo(fragmentClass, arguments))
+            getParentNavigator().navigateTo(fragmentClass, arguments);
+    }
+
+    default void navigateTo(@NonNull Fragment fragment) {
+        if (!onNavigateTo(fragment))
+            getParentNavigator().navigateTo(fragment);
     }
 
     default void navigateTo(@NonNull Intent intent) {
@@ -23,7 +28,11 @@ public interface Navigator {
             getParentNavigator().navigateTo(intent);
     }
 
-    default boolean onNavigateTo(@NonNull Class<? extends Fragment> fragment, HashMap<String, Serializable> arguments) {
+    default boolean onNavigateTo(@NonNull Class<? extends Fragment> fragmentClass, HashMap<String, Serializable> arguments) {
+        return false;
+    }
+
+    default boolean onNavigateTo(@NonNull Fragment fragment) {
         return false;
     }
 

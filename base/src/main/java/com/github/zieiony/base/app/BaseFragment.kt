@@ -84,21 +84,24 @@ abstract class BaseFragment : Fragment, Navigator {
     }
 
     override fun onNavigateTo(
-        target: Class<out Fragment>,
+        fragmentClass: Class<out Fragment>,
         arguments: HashMap<String, Serializable>?
     ): Boolean {
-        if (target.isAssignableFrom(DialogFragment::class.java)) {
-            val fragment = childFragmentManager.fragmentFactory.instantiate(
-                target.classLoader!!,
-                target.name
-            ) as DialogFragment
-            arguments?.let {
-                val bundle = Bundle()
-                fragment.arguments = bundle
-                it.forEach { entry ->
-                    bundle.putSerializable(entry.key, entry.value)
-                }
+        val fragment = childFragmentManager.fragmentFactory.instantiate(
+            fragmentClass.classLoader!!,
+            fragmentClass.name)
+        arguments?.let {
+            val bundle = Bundle()
+            fragment.arguments = bundle
+            it.forEach { entry ->
+                bundle.putSerializable(entry.key, entry.value)
             }
+        }
+        return onNavigateTo(fragment)
+    }
+
+    override fun onNavigateTo(fragment: Fragment): Boolean {
+        if (fragment is DialogFragment) {
             fragment.show(childFragmentManager, DIALOG_TAG)
             return true
         }

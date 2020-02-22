@@ -54,7 +54,6 @@ open class BaseViewModel<T : BaseState>(
         navigator = null
     }
 
-
     fun navigateTo(
         target: Class<out Fragment>,
         arguments: HashMap<String, Serializable?>?
@@ -66,6 +65,28 @@ open class BaseViewModel<T : BaseState>(
             )
         } else {
             localNavigator.navigateTo(target, arguments)
+        }
+    }
+
+    fun navigateTo(fragment: Fragment) {
+        val localNavigator = navigator
+        if (localNavigator == null) {
+            val bundle = fragment.arguments
+            navigationEvents.add(
+                NavigationEvent.FragmentNavigationEvent(
+                    fragment.javaClass.name, if (bundle == null) {
+                        null
+                    } else {
+                        val arguments = HashMap<String, Serializable?>()
+                        bundle.keySet().forEach {
+                            arguments[it] = bundle[it] as Serializable?
+                        }
+                        arguments
+                    }
+                )
+            )
+        } else {
+            localNavigator.navigateTo(fragment)
         }
     }
 
