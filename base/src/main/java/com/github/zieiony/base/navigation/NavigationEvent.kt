@@ -1,4 +1,4 @@
-package com.github.zieiony.base.arch
+package com.github.zieiony.base.navigation
 
 import android.content.Intent
 import android.os.Parcel

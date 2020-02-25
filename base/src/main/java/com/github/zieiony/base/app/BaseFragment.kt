@@ -1,6 +1,7 @@
 package com.github.zieiony.base.app
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -11,6 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
+import com.github.zieiony.base.navigation.Navigator
 import java.io.Serializable
 
 
@@ -90,9 +92,27 @@ abstract class BaseFragment() : Fragment(), Navigator {
         parentNavigator = null
     }
 
-    override fun onNavigateTo(
+    override fun navigateTo(
+        fragmentClass: Class<out Fragment?>,
+        arguments: java.util.HashMap<String, Serializable?>?
+    ) {
+        if (!onNavigateTo(fragmentClass, arguments))
+            parentNavigator?.navigateTo(fragmentClass, arguments)
+    }
+
+    override fun navigateTo(fragment: Fragment) {
+        if (!onNavigateTo(fragment))
+            parentNavigator?.navigateTo(fragment)
+    }
+
+    override fun navigateTo(intent: Intent) {
+        if (!onNavigateTo(intent))
+            parentNavigator?.navigateTo(intent)
+    }
+
+    open fun onNavigateTo(
         fragmentClass: Class<out Fragment>,
-        arguments: HashMap<String, Serializable>?
+        arguments: java.util.HashMap<String, Serializable?>?
     ): Boolean {
         val fragment = childFragmentManager.fragmentFactory.instantiate(
             fragmentClass.classLoader!!,
@@ -108,11 +128,24 @@ abstract class BaseFragment() : Fragment(), Navigator {
         return onNavigateTo(fragment)
     }
 
-    override fun onNavigateTo(fragment: Fragment): Boolean {
+    open fun onNavigateTo(fragment: Fragment): Boolean {
         if (fragment is DialogFragment) {
             fragment.show(childFragmentManager, DIALOG_TAG)
             return true
         }
+        return false
+    }
+
+    open fun onNavigateTo(intent: Intent): Boolean {
+        return false
+    }
+
+    override fun navigateBack() {
+        if (!onNavigateBack())
+            parentNavigator?.navigateBack()
+    }
+
+    open fun onNavigateBack(): Boolean {
         return false
     }
 

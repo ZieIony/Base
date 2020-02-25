@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
+import com.github.zieiony.base.navigation.Navigator
 import java.io.Serializable
 
 
@@ -51,13 +52,32 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
                 _result = null
     }
 
-    override fun onNavigateTo(
+    override fun navigateTo(
+        fragmentClass: Class<out Fragment?>,
+        arguments: java.util.HashMap<String, Serializable?>?
+    ) {
+        if (!onNavigateTo(fragmentClass, arguments))
+            parentNavigator?.navigateTo(fragmentClass, arguments)
+    }
+
+    override fun navigateTo(fragment: Fragment) {
+        if (!onNavigateTo(fragment))
+            parentNavigator?.navigateTo(fragment)
+    }
+
+    override fun navigateTo(intent: Intent) {
+        if (!onNavigateTo(intent))
+            parentNavigator?.navigateTo(intent)
+    }
+
+    open fun onNavigateTo(
         fragmentClass: Class<out Fragment>,
-        arguments: HashMap<String, Serializable>?
+        arguments: java.util.HashMap<String, Serializable?>?
     ): Boolean {
         val fragment = supportFragmentManager.fragmentFactory.instantiate(
             fragmentClass.classLoader!!,
-            fragmentClass.name)
+            fragmentClass.name
+        )
         arguments?.let {
             val bundle = Bundle()
             fragment.arguments = bundle
@@ -68,7 +88,7 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
         return onNavigateTo(fragment)
     }
 
-    override fun onNavigateTo(fragment: Fragment): Boolean {
+    open fun onNavigateTo(fragment: Fragment): Boolean {
         if (fragment is DialogFragment) {
             fragment.show(supportFragmentManager, DIALOG_TAG)
             return true
@@ -76,12 +96,16 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
         return false
     }
 
-    override fun onNavigateTo(intent: Intent): Boolean {
+    open fun onNavigateTo(intent: Intent): Boolean {
         startActivity(intent)
         return true
     }
 
-    override fun onNavigateBack(): Boolean {
+     override fun navigateBack() {
+         onNavigateBack()
+     }
+
+    open fun onNavigateBack(): Boolean {
         onBackPressed()
         return true
     }
