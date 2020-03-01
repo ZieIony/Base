@@ -1,40 +1,52 @@
 package com.github.zieiony.base.arch
 
+import android.os.Bundle
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
-import com.github.zieiony.base.navigation.DeferredNavigator
-import com.github.zieiony.base.navigation.Navigator
+import androidx.lifecycle.MutableLiveData
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 
-open class BaseViewModel<T : BaseState>(
-    internal val savedStateHandle: SavedStateHandle
-) : ViewModel() {
+open class BaseViewModel<T : BaseState> {
+    val arguments = Bundle()
 
-    private val _navigator = DeferredNavigator()
-    protected val navigator: Navigator = _navigator
+    internal val liveDatas = HashMap<String, MutableLiveData<out BaseState>?>()
 
-    protected val state by ViewModelStateLiveDataDelegate<T>()
+    protected val state by ViewModelArgumentLiveDataDelegate<T>()
     private val disposables = CompositeDisposable()
-
-    fun initNavigator(navigator: Navigator) {
-        _navigator.restoreState(savedStateHandle)
-        _navigator.navigator = navigator
-    }
 
     private fun addDisposable(disposable: Disposable) = disposables.add(disposable)
 
-    protected fun Disposable.disposeOnCleared() {
+    protected fun Disposable.disposeOnDestroy() {
         addDisposable(this)
     }
 
     fun getState(): LiveData<T> = state
 
-    override fun onCleared() {
+    open fun init(bundle: Bundle? = null) {
+        arguments.putAll(bundle)
+
+        onInit(arguments)
+    }
+
+    open fun onInit(bundle: Bundle) {
+    }
+
+    open fun saveState(bundle: Bundle) {
+        bundle.putAll(arguments)
+
+        onSaveState(bundle)
+    }
+
+    open fun onSaveState(bundle: Bundle) {
+    }
+
+    open fun destroy() {
         disposables.clear()
-        _navigator.saveState(savedStateHandle)
-        _navigator.navigator = null
+
+        onDestroy()
+    }
+
+    open fun onDestroy() {
     }
 
 }

@@ -16,7 +16,7 @@ import com.github.zieiony.base.navigation.Navigator
 import java.io.Serializable
 
 
-abstract class BaseFragment() : Fragment(), Navigator {
+abstract class BaseFragment : Fragment(), Navigator {
 
     var title: String? = null
 

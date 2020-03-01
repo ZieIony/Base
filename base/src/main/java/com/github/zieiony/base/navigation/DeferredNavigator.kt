@@ -1,8 +1,8 @@
 package com.github.zieiony.base.navigation
 
 import android.content.Intent
+import android.os.Bundle
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.SavedStateHandle
 import java.io.Serializable
 
 
@@ -95,13 +95,13 @@ internal class DeferredNavigator : Navigator {
         }
     }
 
-    fun saveState(savedStateHandle: SavedStateHandle) {
-        savedStateHandle.set(EVENTS, events)
+    fun saveState(bundle: Bundle) {
+        bundle.putSerializable(EVENTS, events)
     }
 
-    fun restoreState(savedStateHandle: SavedStateHandle) {
-        savedStateHandle.get<ArrayList<NavigationEvent>>(EVENTS)?.let {
-            events = it
+    fun restoreState(bundle: Bundle) {
+        bundle.getSerializable(EVENTS)?.let {
+            events = it as ArrayList<NavigationEvent>
         }
     }
 
