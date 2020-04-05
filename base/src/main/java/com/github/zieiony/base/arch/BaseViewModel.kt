@@ -17,7 +17,7 @@ open class BaseViewModel : ViewModel() {
 
     private fun addDisposable(disposable: Disposable) = disposables.add(disposable)
 
-    protected fun Disposable.disposeOnDestroy() {
+    protected fun Disposable.disposeOnCleared() {
         addDisposable(this)
     }
 
