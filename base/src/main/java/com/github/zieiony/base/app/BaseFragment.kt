@@ -12,6 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
+import com.github.zieiony.base.arch.BaseNavigatorViewModel
 import com.github.zieiony.base.arch.BaseViewModel
 import com.github.zieiony.base.navigation.Navigator
 import java.io.Serializable
@@ -161,7 +162,12 @@ abstract class BaseFragment : Fragment(), Navigator {
     fun <T : ViewModel> getViewModel(c: Class<T>, factory: ViewModelProvider.Factory? = null): T {
         val viewModel = ViewModelProviders.of(this, factory).get("" + fragmentId, c)
         if (viewModel is BaseViewModel) {
-            viewModel.init(arguments?.getBundle(VIEWMODEL_STATE + c.canonicalName + fragmentId))
+            val bundle = arguments?.getBundle(VIEWMODEL_STATE + c.canonicalName + fragmentId)
+            if (viewModel is BaseNavigatorViewModel) {
+                viewModel.init(bundle, this)
+            } else {
+                viewModel.init(bundle)
+            }
             viewModels.add(WeakReference(viewModel))
         }
         return viewModel
