@@ -18,6 +18,10 @@ import java.io.Serializable
 
 abstract class BaseDialogFragment() : DialogFragment(), Navigator {
 
+    open val layoutId: Int = INVALID_ID
+    open val titleId: Int = INVALID_ID
+    open val iconId: Int = INVALID_ID
+
     var title: String? = null
 
     var icon: Drawable? = null
@@ -39,10 +43,8 @@ abstract class BaseDialogFragment() : DialogFragment(), Navigator {
     ): View? {
         if (savedInstanceState != null)
             coldStart = false
-        javaClass.getAnnotation(ScreenAnnotation::class.java)?.let {
-            if (it.layoutId != 0)
-                return inflater.inflate(it.layoutId, container, false)
-        }
+        if (layoutId != INVALID_ID)
+            return inflater.inflate(layoutId, container, false)
         return super.onCreateView(inflater, container, savedInstanceState)
     }
 
@@ -60,12 +62,10 @@ abstract class BaseDialogFragment() : DialogFragment(), Navigator {
         if (parentNavigator == null && activity is Navigator)
             parentNavigator = activity as Navigator
 
-        javaClass.getAnnotation(ScreenAnnotation::class.java)?.let {
-            if (it.titleId != 0)
-                title = context.resources.getString(it.titleId)
-            if (it.iconId != 0)
-                icon = context.resources.getDrawable(it.iconId)
-        }
+        if (titleId != INVALID_ID)
+            title = context.resources.getString(titleId)
+        if (iconId != INVALID_ID)
+            icon = context.resources.getDrawable(iconId)
     }
 
     open fun onColdStart() {
@@ -129,4 +129,8 @@ abstract class BaseDialogFragment() : DialogFragment(), Navigator {
 
     fun <T : ViewModel> getViewModel(c: Class<T>, factory: ViewModelProvider.Factory? = null) =
         ViewModelProviders.of(this, factory).get(c)
+
+    companion object {
+        private const val INVALID_ID = 0
+    }
 }

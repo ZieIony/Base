@@ -4,7 +4,7 @@ import android.os.Bundle
 import com.github.zieiony.base.navigation.DeferredNavigator
 import com.github.zieiony.base.navigation.Navigator
 
-open class BaseNavigatorViewModel<T : BaseState> : BaseViewModel<T>() {
+open class BaseNavigatorViewModel : BaseViewModel() {
     private val _navigator = DeferredNavigator()
     protected val navigator: Navigator = _navigator
 
@@ -21,9 +21,9 @@ open class BaseNavigatorViewModel<T : BaseState> : BaseViewModel<T>() {
         super.saveState(bundle)
     }
 
-    override fun destroy() {
+    override fun onCleared() {
         _navigator.navigator = null
 
-        super.destroy()
+        super.onCleared()
     }
 }

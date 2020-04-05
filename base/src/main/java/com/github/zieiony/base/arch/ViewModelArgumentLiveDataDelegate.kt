@@ -5,9 +5,9 @@ import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
 class ViewModelArgumentLiveDataDelegate<T : BaseState?> :
-    ReadOnlyProperty<BaseViewModel<*>, MutableLiveData<T>> {
+    ReadOnlyProperty<BaseViewModel, MutableLiveData<T>> {
 
-    override fun getValue(thisRef: BaseViewModel<*>, property: KProperty<*>): MutableLiveData<T> {
+    override fun getValue(thisRef: BaseViewModel, property: KProperty<*>): MutableLiveData<T> {
         val key = property.name
         thisRef.liveDatas[key]?.let{
             return it as MutableLiveData<T>

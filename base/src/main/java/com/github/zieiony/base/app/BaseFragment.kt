@@ -12,11 +12,20 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
+import com.github.zieiony.base.arch.BaseViewModel
 import com.github.zieiony.base.navigation.Navigator
 import java.io.Serializable
+import java.lang.ref.WeakReference
 
 
 abstract class BaseFragment : Fragment(), Navigator {
+
+    protected open val layoutId: Int = INVALID_ID
+    protected open val titleId: Int = INVALID_ID
+    protected open val iconId: Int = INVALID_ID
+
+    private var fragmentId by FragmentArgumentDelegate<Int>()
+    private val viewModels = mutableListOf<WeakReference<out BaseViewModel>>()
 
     var title: String? = null
 
@@ -28,8 +37,12 @@ abstract class BaseFragment : Fragment(), Navigator {
 
     override fun getParentNavigator() = parentNavigator
 
-    init {
-        arguments = Bundle()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (arguments == null) {
+            arguments = Bundle()
+            fragmentId = fragmentIdCounter++
+        }
     }
 
     override fun onCreateView(
@@ -39,10 +52,8 @@ abstract class BaseFragment : Fragment(), Navigator {
     ): View? {
         if (savedInstanceState != null)
             coldStart = false
-        javaClass.getAnnotation(ScreenAnnotation::class.java)?.let {
-            if (it.layoutId != 0)
-                return inflater.inflate(it.layoutId, container, false)
-        }
+        if (layoutId != INVALID_ID)
+            return inflater.inflate(layoutId, container, false)
         return super.onCreateView(inflater, container, savedInstanceState)
     }
 
@@ -60,12 +71,10 @@ abstract class BaseFragment : Fragment(), Navigator {
         if (parentNavigator == null && activity is Navigator)
             parentNavigator = activity as Navigator
 
-        javaClass.getAnnotation(ScreenAnnotation::class.java)?.let {
-            if (it.titleId != 0)
-                title = context.resources.getString(it.titleId)
-            if (it.iconId != 0)
-                icon = context.resources.getDrawable(it.iconId)
-        }
+        if (titleId != INVALID_ID)
+            title = context.resources.getString(titleId)
+        if (iconId != INVALID_ID)
+            icon = context.resources.getDrawable(iconId)
     }
 
     open fun onColdStart() {
@@ -149,10 +158,33 @@ abstract class BaseFragment : Fragment(), Navigator {
         return false
     }
 
-    fun <T : ViewModel> getViewModel(c: Class<T>, factory: ViewModelProvider.Factory? = null) =
-        ViewModelProviders.of(this, factory).get(c)
+    fun <T : ViewModel> getViewModel(c: Class<T>, factory: ViewModelProvider.Factory? = null): T {
+        val viewModel = ViewModelProviders.of(this, factory).get("" + fragmentId, c)
+        if (viewModel is BaseViewModel) {
+            viewModel.init(arguments?.getBundle(VIEWMODEL_STATE + c.canonicalName + fragmentId))
+            viewModels.add(WeakReference(viewModel))
+        }
+        return viewModel
+    }
+
+    override fun onStop() {
+        super.onStop()
+        viewModels.forEach { weakReference ->
+            val bundle = Bundle()
+            weakReference.get()?.let {
+                it.saveState(bundle)
+                arguments?.putBundle(
+                    VIEWMODEL_STATE + it.javaClass.canonicalName + fragmentId,
+                    bundle
+                )
+            }
+        }
+    }
 
     companion object {
         private const val DIALOG_TAG = "dialog"
+        private const val INVALID_ID = 0
+        private const val VIEWMODEL_STATE = "viewModelState"
+        private var fragmentIdCounter = 1
     }
 }

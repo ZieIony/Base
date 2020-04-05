@@ -12,6 +12,10 @@ import java.io.Serializable
 
 abstract class BaseActivity : AppCompatActivity(), Navigator {
 
+    open val layoutId: Int = INVALID_ID
+    open val titleId: Int = INVALID_ID
+    open val iconId: Int = INVALID_ID
+
     var icon: Drawable? = null
 
     private var _result: Serializable? = null
@@ -23,14 +27,12 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
 
         super.onCreate(savedInstanceState)
 
-        javaClass.getAnnotation(ScreenAnnotation::class.java)?.let {
-            if (it.layoutId != 0)
-                setContentView(it.layoutId)
-            if (it.titleId != 0)
-                title = resources.getString(it.titleId)
-            if (it.iconId != 0)
-                icon = resources.getDrawable(it.iconId)
-        }
+        if (layoutId != INVALID_ID)
+            setContentView(layoutId)
+        if (titleId != INVALID_ID)
+            title = resources.getString(titleId)
+        if (iconId != INVALID_ID)
+            icon = resources.getDrawable(iconId)
     }
 
     open fun onColdStart() {
@@ -101,9 +103,9 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
         return true
     }
 
-     override fun navigateBack() {
-         onNavigateBack()
-     }
+    override fun navigateBack() {
+        onNavigateBack()
+    }
 
     open fun onNavigateBack(): Boolean {
         onBackPressed()
@@ -127,5 +129,6 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
     companion object {
         private const val FRAGMENT_RESULT = "fragmentResult"
         private const val DIALOG_TAG = "dialog"
+        private const val INVALID_ID = 0
     }
 }
