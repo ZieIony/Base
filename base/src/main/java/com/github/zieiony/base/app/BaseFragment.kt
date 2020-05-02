@@ -16,6 +16,7 @@ import com.github.zieiony.base.arch.BaseNavigatorViewModel
 import com.github.zieiony.base.arch.BaseViewModel
 import com.github.zieiony.base.navigation.Navigator
 import java.io.Serializable
+import java.lang.IllegalStateException
 import java.lang.ref.WeakReference
 
 
@@ -40,8 +41,11 @@ abstract class BaseFragment : Fragment(), Navigator {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (arguments == null) {
+        if (arguments == null)
             arguments = Bundle()
+        try {
+            val id = fragmentId
+        } catch (e: IllegalStateException) {
             fragmentId = fragmentIdCounter++
         }
     }

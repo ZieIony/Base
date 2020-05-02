@@ -10,7 +10,10 @@ class FragmentArgumentDelegate<T : Serializable?> : ReadWriteProperty<Fragment, 
 
     override fun getValue(thisRef: Fragment, property: KProperty<*>): T {
         val key = property.name
-        return thisRef.arguments?.get(key) as T
+        val arguments = thisRef.arguments ?: throw IllegalStateException("Arguments cannot be null")
+        if (!arguments.containsKey(key))
+            throw java.lang.IllegalStateException("$key not present in arguments")
+        return arguments.get(key) as T
     }
 
     override fun setValue(thisRef: Fragment, property: KProperty<*>, value: T) {
