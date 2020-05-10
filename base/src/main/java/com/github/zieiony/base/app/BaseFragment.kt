@@ -95,10 +95,10 @@ abstract class BaseFragment : Fragment(), Navigator {
 
     override fun onResume() {
         super.onResume()
-        val result = getResult<Serializable>()
-        if (result != null)
-            if (onResult(result))
-                setResult(null)
+        for (result in results.entries) {
+            if (onResult(result.key, result.value))
+                clearResult(result.key)
+        }
     }
 
     override fun onDetach() {

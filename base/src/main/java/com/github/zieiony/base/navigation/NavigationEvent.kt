@@ -35,5 +35,5 @@ internal sealed class NavigationEvent : Serializable {
     }
 
     internal object BackNavigationEvent : NavigationEvent()
-    internal class ResultNavigationEvent(var result: Serializable?) : NavigationEvent()
+    internal class ResultNavigationEvent(var key: String, var result: Serializable) : NavigationEvent()
 }

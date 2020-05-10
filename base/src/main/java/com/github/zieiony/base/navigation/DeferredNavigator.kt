@@ -15,7 +15,7 @@ internal class DeferredNavigator : Navigator {
             _navigator?.let { navigator ->
                 events.forEach { event ->
                     when (event) {
-                        is NavigationEvent.ResultNavigationEvent -> navigator.setResult(event.result)
+                        is NavigationEvent.ResultNavigationEvent -> navigator.setResult(event.key, event.result)
                         is NavigationEvent.BackNavigationEvent -> navigator.navigateBack()
                         is NavigationEvent.FragmentNavigationEvent -> {
                             navigator.navigateTo(
@@ -86,12 +86,12 @@ internal class DeferredNavigator : Navigator {
         }
     }
 
-    override fun <T : Serializable?> setResult(result: T?) {
+    override fun <T : Serializable> setResult(key: String, result: T) {
         val localNavigator = navigator
         if (localNavigator == null) {
-            events.add(NavigationEvent.ResultNavigationEvent(result))
+            events.add(NavigationEvent.ResultNavigationEvent(key, result))
         } else {
-            localNavigator.setResult(result)
+            localNavigator.setResult(key, result)
         }
     }
 

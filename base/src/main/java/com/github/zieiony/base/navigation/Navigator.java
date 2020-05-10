@@ -21,16 +21,25 @@ public interface Navigator {
 
     void navigateBack();
 
-    default <T extends Serializable> T getResult() {
-        return getParentNavigator().getResult();
+    @NonNull
+    default HashMap<String, Serializable> getResults() {
+        return getParentNavigator().getResults();
     }
 
-    default <T extends Serializable> void setResult(T result) {
-        if (result == null || !onResult(result))
-            getParentNavigator().setResult(result);
+    default <T extends Serializable> T getResult(@NonNull String key) {
+        return getParentNavigator().getResult(key);
     }
 
-    default boolean onResult(Serializable result) {
+    default <T extends Serializable> void setResult(@NonNull String key, T result) {
+        if (result == null || !onResult(key, result))
+            getParentNavigator().setResult(key, result);
+    }
+
+    default void clearResult(@NonNull String key) {
+        getParentNavigator().clearResult(key);
+    }
+
+    default boolean onResult(@NonNull String key, Serializable result) {
         return false;
     }
 }

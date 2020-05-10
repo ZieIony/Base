@@ -7,11 +7,12 @@ import androidx.lifecycle.viewModelScope
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import kotlinx.coroutines.cancel
+import java.io.Serializable
 
 open class BaseViewModel : ViewModel() {
     val arguments = Bundle()
 
-    internal val liveDatas = HashMap<String, MutableLiveData<out BaseState>?>()
+    internal val liveDatas = HashMap<String, MutableLiveData<out Serializable>?>()
 
     private val disposables = CompositeDisposable()
 

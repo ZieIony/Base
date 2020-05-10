@@ -18,12 +18,14 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
 
     var icon: Drawable? = null
 
-    private var _result: Serializable? = null
+    private val _results = java.util.HashMap<String, Serializable?>()
 
     private var coldStart = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        _result = savedInstanceState?.getSerializable(FRAGMENT_RESULT)
+        savedInstanceState?.getSerializable(FRAGMENT_RESULT)?.let {
+            _results.putAll(it as HashMap<String, Serializable?>)
+        }
 
         super.onCreate(savedInstanceState)
 
@@ -48,10 +50,10 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
 
     override fun onResume() {
         super.onResume()
-        val result = getResult<Serializable>()
-        if (result != null)
-            if (onResult(result))
-                _result = null
+        for (result in results.entries) {
+            if (onResult(result.key, result.value))
+                clearResult(result.key)
+        }
     }
 
     override fun navigateTo(
@@ -112,18 +114,29 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
         return true
     }
 
-    final override fun <T : Serializable?> getResult(): T? {
-        return _result as T?
+    override fun getResults(): java.util.HashMap<String, Serializable?> {
+        return _results
     }
 
-    final override fun <T : Serializable?> setResult(result: T) {
-        if (result == null || !onResult(result))
-            _result = result
+    override fun <T : Serializable?> getResult(key: String): T {
+        return _results[key] as T
+    }
+
+    final override fun <T : Serializable?> setResult(key: String, result: T) {
+        if (onResult(key, result)) {
+            clearResult(key)
+        } else {
+            results[key] = result
+        }
+    }
+
+    override fun clearResult(key: String) {
+        _results.remove(key)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putSerializable(FRAGMENT_RESULT, _result)
+        outState.putSerializable(FRAGMENT_RESULT, _results)
     }
 
     companion object {
