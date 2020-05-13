@@ -12,8 +12,11 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
+import com.github.zieiony.base.arch.BaseNavigatorViewModel
+import com.github.zieiony.base.arch.BaseViewModel
 import com.github.zieiony.base.navigation.Navigator
 import java.io.Serializable
+import java.lang.ref.WeakReference
 
 
 abstract class BaseDialogFragment() : DialogFragment(), Navigator {
@@ -21,6 +24,10 @@ abstract class BaseDialogFragment() : DialogFragment(), Navigator {
     open val layoutId: Int = INVALID_ID
     open val titleId: Int = INVALID_ID
     open val iconId: Int = INVALID_ID
+
+    private var _navigatorId by FragmentArgumentDelegate<Int>()
+    private var _resultTarget by FragmentArgumentDelegate<Int>()
+    private val viewModels = mutableListOf<WeakReference<out BaseViewModel>>()
 
     var title: String? = null
 
@@ -30,10 +37,23 @@ abstract class BaseDialogFragment() : DialogFragment(), Navigator {
 
     private var coldStart = true
 
+    init {
+        _resultTarget = INVALID_ID
+    }
+
     override fun getParentNavigator() = parentNavigator
 
-    init {
-        arguments = Bundle()
+    override fun getNavigatorId() = _navigatorId
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (arguments == null)
+            arguments = Bundle()
+        try {
+            val id = _navigatorId
+        } catch (e: IllegalStateException) {
+            _navigatorId = BaseFragment.navigatorIdCounter++
+        }
     }
 
     override fun onCreateView(
@@ -87,10 +107,7 @@ abstract class BaseDialogFragment() : DialogFragment(), Navigator {
     override fun navigateTo(
         fragmentClass: Class<out Fragment?>,
         arguments: java.util.HashMap<String, Serializable?>?
-    ) {
-        if (!onNavigateTo(fragmentClass, arguments))
-            parentNavigator?.navigateTo(fragmentClass, arguments)
-    }
+    ) = navigateTo(instantiateFragment(fragmentClass, arguments))
 
     override fun navigateTo(fragment: Fragment) {
         if (!onNavigateTo(fragment))
@@ -102,11 +119,22 @@ abstract class BaseDialogFragment() : DialogFragment(), Navigator {
             parentNavigator?.navigateTo(intent)
     }
 
-    open fun onNavigateTo(
+    private fun instantiateFragment(
         fragmentClass: Class<out Fragment>,
         arguments: java.util.HashMap<String, Serializable?>?
-    ): Boolean {
-        return false
+    ): Fragment {
+        val fragment = childFragmentManager.fragmentFactory.instantiate(
+            fragmentClass.classLoader!!,
+            fragmentClass.name
+        )
+        arguments?.let {
+            val bundle = Bundle()
+            fragment.arguments = bundle
+            it.forEach { entry ->
+                bundle.putSerializable(entry.key, entry.value)
+            }
+        }
+        return fragment
     }
 
     open fun onNavigateTo(fragment: Fragment): Boolean {
@@ -127,10 +155,42 @@ abstract class BaseDialogFragment() : DialogFragment(), Navigator {
         return true
     }
 
-    fun <T : ViewModel> getViewModel(c: Class<T>, factory: ViewModelProvider.Factory? = null) =
-        ViewModelProviders.of(this, factory).get(c)
+    override fun setResultTarget(resultTarget: Int) {
+        _resultTarget = resultTarget
+    }
+
+    override fun getResultTarget() = _resultTarget
+
+    fun <T : ViewModel> getViewModel(c: Class<T>, factory: ViewModelProvider.Factory? = null): T {
+        val viewModel = ViewModelProviders.of(this, factory).get("" + _navigatorId, c)
+        if (viewModel is BaseViewModel) {
+            val bundle = arguments?.getBundle(VIEWMODEL_STATE + c.canonicalName + _navigatorId)
+            if (viewModel is BaseNavigatorViewModel) {
+                viewModel.init(bundle, this)
+            } else {
+                viewModel.init(bundle)
+            }
+            viewModels.add(WeakReference(viewModel))
+        }
+        return viewModel
+    }
+
+    override fun onStop() {
+        super.onStop()
+        viewModels.forEach { weakReference ->
+            val bundle = Bundle()
+            weakReference.get()?.let {
+                it.saveState(bundle)
+                arguments?.putBundle(
+                    VIEWMODEL_STATE + it.javaClass.canonicalName + _navigatorId,
+                    bundle
+                )
+            }
+        }
+    }
 
     companion object {
         private const val INVALID_ID = 0
+        private const val VIEWMODEL_STATE = "viewModelState"
     }
 }

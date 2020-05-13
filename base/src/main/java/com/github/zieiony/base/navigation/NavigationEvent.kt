@@ -35,5 +35,9 @@ internal sealed class NavigationEvent : Serializable {
     }
 
     internal object BackNavigationEvent : NavigationEvent()
-    internal class ResultNavigationEvent(var key: String, var result: Serializable) : NavigationEvent()
+
+    internal class ResultNavigationEvent(val key: String, val result: Serializable?) :
+        NavigationEvent()
+
+    internal class ResultNavigationEvent2(val result: Result) : NavigationEvent()
 }

@@ -7,11 +7,14 @@ import androidx.fragment.app.Fragment;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 
 public interface Navigator {
     default Navigator getParentNavigator() {
         return null;
     }
+
+    int getNavigatorId();
 
     void navigateTo(@NonNull Class<? extends Fragment> fragmentClass, HashMap<String, Serializable> arguments);
 
@@ -22,24 +25,32 @@ public interface Navigator {
     void navigateBack();
 
     @NonNull
-    default HashMap<String, Serializable> getResults() {
+    default List<Result> getResults() {
         return getParentNavigator().getResults();
     }
 
-    default <T extends Serializable> T getResult(@NonNull String key) {
-        return getParentNavigator().getResult(key);
+    default Result getResult(int navigatorId, @NonNull String key) {
+        return getParentNavigator().getResult(navigatorId, key);
     }
 
-    default <T extends Serializable> void setResult(@NonNull String key, T result) {
-        if (result == null || !onResult(key, result))
-            getParentNavigator().setResult(key, result);
+    default void setResult(@NonNull String key, Serializable result) {
+        getParentNavigator().setResult(new Result(getResultTarget(), key, result));
     }
 
-    default void clearResult(@NonNull String key) {
-        getParentNavigator().clearResult(key);
+    default void setResult(@NonNull Result result) {
+        if (result.getTarget() != getNavigatorId() || !onResult(result.getKey(), result.getValue()))
+            getParentNavigator().setResult(result);
+    }
+
+    default void clearResult(@NonNull Result result) {
+        getParentNavigator().clearResult(result);
     }
 
     default boolean onResult(@NonNull String key, Serializable result) {
         return false;
     }
+
+    void setResultTarget(int resultTarget);
+
+    int getResultTarget();
 }

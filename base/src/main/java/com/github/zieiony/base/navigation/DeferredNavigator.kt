@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import java.io.Serializable
+import java.lang.RuntimeException
 
 
 internal class DeferredNavigator : Navigator {
@@ -15,7 +16,13 @@ internal class DeferredNavigator : Navigator {
             _navigator?.let { navigator ->
                 events.forEach { event ->
                     when (event) {
-                        is NavigationEvent.ResultNavigationEvent -> navigator.setResult(event.key, event.result)
+                        is NavigationEvent.ResultNavigationEvent -> navigator.setResult(
+                            event.key,
+                            event.result
+                        )
+                        is NavigationEvent.ResultNavigationEvent2 -> navigator.setResult(
+                            event.result
+                        )
                         is NavigationEvent.BackNavigationEvent -> navigator.navigateBack()
                         is NavigationEvent.FragmentNavigationEvent -> {
                             navigator.navigateTo(
@@ -31,6 +38,10 @@ internal class DeferredNavigator : Navigator {
         }
 
     private var events = ArrayList<NavigationEvent>()
+
+    override fun getNavigatorId(): Int {
+        throw RuntimeException("Not supported")
+    }
 
     override fun navigateTo(
         target: Class<out Fragment>,
@@ -86,13 +97,30 @@ internal class DeferredNavigator : Navigator {
         }
     }
 
-    override fun <T : Serializable> setResult(key: String, result: T) {
+    override fun setResult(key: String, result: Serializable) {
         val localNavigator = navigator
         if (localNavigator == null) {
             events.add(NavigationEvent.ResultNavigationEvent(key, result))
         } else {
             localNavigator.setResult(key, result)
         }
+    }
+
+    override fun setResult(result: Result) {
+        val localNavigator = navigator
+        if (localNavigator == null) {
+            events.add(NavigationEvent.ResultNavigationEvent2(result))
+        } else {
+            localNavigator.setResult(result)
+        }
+    }
+
+    override fun setResultTarget(resultTarget: Int) {
+        throw RuntimeException("Not supported")
+    }
+
+    override fun getResultTarget(): Int {
+        throw RuntimeException("Not supported")
     }
 
     fun saveState(bundle: Bundle) {

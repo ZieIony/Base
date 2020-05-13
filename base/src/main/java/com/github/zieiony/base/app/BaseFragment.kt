@@ -16,7 +16,6 @@ import com.github.zieiony.base.arch.BaseNavigatorViewModel
 import com.github.zieiony.base.arch.BaseViewModel
 import com.github.zieiony.base.navigation.Navigator
 import java.io.Serializable
-import java.lang.IllegalStateException
 import java.lang.ref.WeakReference
 
 
@@ -26,7 +25,8 @@ abstract class BaseFragment : Fragment(), Navigator {
     protected open val titleId: Int = INVALID_ID
     protected open val iconId: Int = INVALID_ID
 
-    private var fragmentId by FragmentArgumentDelegate<Int>()
+    private var _navigatorId by FragmentArgumentDelegate<Int>()
+    private var _resultTarget by FragmentArgumentDelegate<Int>()
     private val viewModels = mutableListOf<WeakReference<out BaseViewModel>>()
 
     var title: String? = null
@@ -37,16 +37,22 @@ abstract class BaseFragment : Fragment(), Navigator {
 
     private var coldStart = true
 
+    init {
+        _resultTarget = INVALID_ID
+    }
+
     override fun getParentNavigator() = parentNavigator
+
+    override fun getNavigatorId() = _navigatorId
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (arguments == null)
             arguments = Bundle()
         try {
-            val id = fragmentId
+            val id = _navigatorId
         } catch (e: IllegalStateException) {
-            fragmentId = fragmentIdCounter++
+            _navigatorId = navigatorIdCounter++
         }
     }
 
@@ -95,9 +101,9 @@ abstract class BaseFragment : Fragment(), Navigator {
 
     override fun onResume() {
         super.onResume()
-        for (result in results.entries) {
-            if (onResult(result.key, result.value))
-                clearResult(result.key)
+        for (result in results) {
+            if (result.target == navigatorId && onResult(result.key, result.value))
+                clearResult(result)
         }
     }
 
@@ -109,14 +115,15 @@ abstract class BaseFragment : Fragment(), Navigator {
     override fun navigateTo(
         fragmentClass: Class<out Fragment?>,
         arguments: java.util.HashMap<String, Serializable?>?
-    ) {
-        if (!onNavigateTo(fragmentClass, arguments))
-            parentNavigator?.navigateTo(fragmentClass, arguments)
-    }
+    ) = navigateTo(instantiateFragment(fragmentClass, arguments))
 
     override fun navigateTo(fragment: Fragment) {
-        if (!onNavigateTo(fragment))
+        if (onNavigateTo(fragment)) {
+            if (fragment is Navigator)
+                fragment.resultTarget = navigatorId
+        } else {
             parentNavigator?.navigateTo(fragment)
+        }
     }
 
     override fun navigateTo(intent: Intent) {
@@ -124,10 +131,10 @@ abstract class BaseFragment : Fragment(), Navigator {
             parentNavigator?.navigateTo(intent)
     }
 
-    open fun onNavigateTo(
+    private fun instantiateFragment(
         fragmentClass: Class<out Fragment>,
         arguments: java.util.HashMap<String, Serializable?>?
-    ): Boolean {
+    ): Fragment {
         val fragment = childFragmentManager.fragmentFactory.instantiate(
             fragmentClass.classLoader!!,
             fragmentClass.name
@@ -139,7 +146,7 @@ abstract class BaseFragment : Fragment(), Navigator {
                 bundle.putSerializable(entry.key, entry.value)
             }
         }
-        return onNavigateTo(fragment)
+        return fragment
     }
 
     open fun onNavigateTo(fragment: Fragment): Boolean {
@@ -151,7 +158,8 @@ abstract class BaseFragment : Fragment(), Navigator {
     }
 
     open fun onNavigateTo(intent: Intent): Boolean {
-        return false
+        startActivityForResult(intent, _navigatorId)
+        return true
     }
 
     override fun navigateBack() {
@@ -163,10 +171,16 @@ abstract class BaseFragment : Fragment(), Navigator {
         return false
     }
 
+    override fun setResultTarget(resultTarget: Int) {
+        _resultTarget = resultTarget
+    }
+
+    override fun getResultTarget() = _resultTarget
+
     fun <T : ViewModel> getViewModel(c: Class<T>, factory: ViewModelProvider.Factory? = null): T {
-        val viewModel = ViewModelProviders.of(this, factory).get("" + fragmentId, c)
+        val viewModel = ViewModelProviders.of(this, factory).get("" + _navigatorId, c)
         if (viewModel is BaseViewModel) {
-            val bundle = arguments?.getBundle(VIEWMODEL_STATE + c.canonicalName + fragmentId)
+            val bundle = arguments?.getBundle(VIEWMODEL_STATE + c.canonicalName + _navigatorId)
             if (viewModel is BaseNavigatorViewModel) {
                 viewModel.init(bundle, this)
             } else {
@@ -184,7 +198,7 @@ abstract class BaseFragment : Fragment(), Navigator {
             weakReference.get()?.let {
                 it.saveState(bundle)
                 arguments?.putBundle(
-                    VIEWMODEL_STATE + it.javaClass.canonicalName + fragmentId,
+                    VIEWMODEL_STATE + it.javaClass.canonicalName + _navigatorId,
                     bundle
                 )
             }
@@ -195,6 +209,7 @@ abstract class BaseFragment : Fragment(), Navigator {
         private const val DIALOG_TAG = "dialog"
         private const val INVALID_ID = 0
         private const val VIEWMODEL_STATE = "viewModelState"
-        private var fragmentIdCounter = 1
+
+        internal var navigatorIdCounter = 1
     }
 }

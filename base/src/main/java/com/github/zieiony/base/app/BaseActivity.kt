@@ -1,5 +1,6 @@
 package com.github.zieiony.base.app
 
+import android.app.Activity
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -7,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import com.github.zieiony.base.navigation.Navigator
+import com.github.zieiony.base.navigation.Result
 import java.io.Serializable
 
 
@@ -16,15 +18,25 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
     open val titleId: Int = INVALID_ID
     open val iconId: Int = INVALID_ID
 
+    private var _navigatorId: Int = INVALID_ID
+    private var _resultTarget: Int = INVALID_ID
+
     var icon: Drawable? = null
 
-    private val _results = java.util.HashMap<String, Serializable?>()
+    private val _results = ArrayList<Result>()
 
     private var coldStart = true
 
+    override fun getNavigatorId() = _navigatorId
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        savedInstanceState?.getSerializable(FRAGMENT_RESULT)?.let {
-            _results.putAll(it as HashMap<String, Serializable?>)
+        if (savedInstanceState != null) {
+            savedInstanceState.getSerializable(NAVIGATOR_RESULT)?.let {
+                _results.addAll(it as List<Result>)
+            }
+            _navigatorId = savedInstanceState.getInt(NAVIGATOR_ID)
+        } else {
+            _navigatorId = BaseFragment.navigatorIdCounter++
         }
 
         super.onCreate(savedInstanceState)
@@ -50,23 +62,24 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
 
     override fun onResume() {
         super.onResume()
-        for (result in results.entries) {
+        for (result in results) {
             if (onResult(result.key, result.value))
-                clearResult(result.key)
+                clearResult(result)
         }
     }
 
     override fun navigateTo(
         fragmentClass: Class<out Fragment?>,
         arguments: java.util.HashMap<String, Serializable?>?
-    ) {
-        if (!onNavigateTo(fragmentClass, arguments))
-            parentNavigator?.navigateTo(fragmentClass, arguments)
-    }
+    ) = navigateTo(instantiateFragment(fragmentClass, arguments))
 
     override fun navigateTo(fragment: Fragment) {
-        if (!onNavigateTo(fragment))
+        if (onNavigateTo(fragment)) {
+            if (fragment is Navigator)
+                fragment.setResultTarget(navigatorId)
+        } else {
             parentNavigator?.navigateTo(fragment)
+        }
     }
 
     override fun navigateTo(intent: Intent) {
@@ -74,10 +87,10 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
             parentNavigator?.navigateTo(intent)
     }
 
-    open fun onNavigateTo(
+    private fun instantiateFragment(
         fragmentClass: Class<out Fragment>,
         arguments: java.util.HashMap<String, Serializable?>?
-    ): Boolean {
+    ): Fragment {
         val fragment = supportFragmentManager.fragmentFactory.instantiate(
             fragmentClass.classLoader!!,
             fragmentClass.name
@@ -89,7 +102,7 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
                 bundle.putSerializable(entry.key, entry.value)
             }
         }
-        return onNavigateTo(fragment)
+        return fragment
     }
 
     open fun onNavigateTo(fragment: Fragment): Boolean {
@@ -101,8 +114,20 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
     }
 
     open fun onNavigateTo(intent: Intent): Boolean {
-        startActivity(intent)
+        startActivityForResult(intent, _navigatorId)
         return true
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        data?.let {
+            if (data.hasExtra(NAVIGATOR_RESULT)) {
+                val navigatorResult =
+                    data.getSerializableExtra(NAVIGATOR_RESULT) as HashMap<String, Serializable>
+                for (resultEntry in navigatorResult)
+                    setResult(resultEntry.key, resultEntry.value)
+            }
+        }
     }
 
     override fun navigateBack() {
@@ -114,33 +139,45 @@ abstract class BaseActivity : AppCompatActivity(), Navigator {
         return true
     }
 
-    override fun getResults(): java.util.HashMap<String, Serializable?> {
+    override fun getResults(): List<Result> {
         return _results
     }
 
-    override fun <T : Serializable?> getResult(key: String): T {
-        return _results[key] as T
+    override fun getResult(navigatorId: Int, key: String): Result? {
+        return _results.find { it.target == navigatorId && it.key == key }
     }
 
-    final override fun <T : Serializable?> setResult(key: String, result: T) {
-        if (onResult(key, result)) {
-            clearResult(key)
-        } else {
-            results[key] = result
+    override fun setResult(result: Result) {
+        if (result.target != navigatorId || !onResult(result.key, result.value)) {
+            _results.add(result)
+            if (intent.hasExtra(STARTED_FOR_RESULT)) {
+                val resultData = Intent()
+                resultData.putExtra(NAVIGATOR_RESULT, _results)
+                setResult(Activity.RESULT_OK, resultData)
+            }
         }
     }
 
-    override fun clearResult(key: String) {
-        _results.remove(key)
+    override fun clearResult(result: Result) {
+        _results.remove(result)
     }
+
+    override fun setResultTarget(resultTarget: Int) {
+        _resultTarget = resultTarget
+    }
+
+    override fun getResultTarget() = _resultTarget
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putSerializable(FRAGMENT_RESULT, _results)
+        outState.putSerializable(NAVIGATOR_RESULT, _results)
+        outState.putInt(NAVIGATOR_ID, navigatorId)
     }
 
     companion object {
-        private const val FRAGMENT_RESULT = "fragmentResult"
+        private const val NAVIGATOR_ID = "navigatorId"
+        private const val STARTED_FOR_RESULT = "startedForResult"
+        private const val NAVIGATOR_RESULT = "navigatorResult"
         private const val DIALOG_TAG = "dialog"
         private const val INVALID_ID = 0
     }
