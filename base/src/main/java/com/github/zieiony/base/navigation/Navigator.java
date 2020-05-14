@@ -20,6 +20,8 @@ public interface Navigator {
 
     void navigateTo(@NonNull Fragment fragment);
 
+    void navigateTo(@NonNull Navigator originalNavigator, @NonNull Fragment fragment);
+
     void navigateTo(@NonNull Intent intent);
 
     void navigateBack();

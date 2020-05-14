@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import java.io.Serializable
-import java.lang.RuntimeException
 
 
 internal class DeferredNavigator : Navigator {
@@ -79,6 +78,10 @@ internal class DeferredNavigator : Navigator {
         }
     }
 
+    override fun navigateTo(originalNavigator: Navigator, fragment: Fragment) {
+        throw RuntimeException("Not supported")
+    }
+
     override fun navigateTo(intent: Intent) {
         val localNavigator = navigator
         if (localNavigator == null) {
@@ -97,7 +100,7 @@ internal class DeferredNavigator : Navigator {
         }
     }
 
-    override fun setResult(key: String, result: Serializable) {
+    override fun setResult(key: String, result: Serializable?) {
         val localNavigator = navigator
         if (localNavigator == null) {
             events.add(NavigationEvent.ResultNavigationEvent(key, result))

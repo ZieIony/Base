@@ -122,7 +122,16 @@ abstract class BaseFragment : Fragment(), Navigator {
             if (fragment is Navigator)
                 fragment.resultTarget = navigatorId
         } else {
-            parentNavigator?.navigateTo(fragment)
+            parentNavigator?.navigateTo(this, fragment)
+        }
+    }
+
+    override fun navigateTo(originalNavigator: Navigator, fragment: Fragment) {
+        if (onNavigateTo(fragment)) {
+            if (fragment is Navigator)
+                fragment.resultTarget = originalNavigator.navigatorId
+        } else {
+            parentNavigator?.navigateTo(originalNavigator, fragment)
         }
     }
 

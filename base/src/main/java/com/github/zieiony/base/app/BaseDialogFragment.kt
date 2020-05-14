@@ -114,6 +114,11 @@ abstract class BaseDialogFragment() : DialogFragment(), Navigator {
             parentNavigator?.navigateTo(fragment)
     }
 
+    override fun navigateTo(originalNavigator: Navigator, fragment: Fragment) {
+        if (!onNavigateTo(fragment))
+            parentNavigator?.navigateTo(originalNavigator, fragment)
+    }
+
     override fun navigateTo(intent: Intent) {
         if (!onNavigateTo(intent))
             parentNavigator?.navigateTo(intent)
