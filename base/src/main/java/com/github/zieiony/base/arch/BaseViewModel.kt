@@ -1,7 +1,6 @@
 package com.github.zieiony.base.arch
 
 import android.os.Bundle
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.reactivex.disposables.CompositeDisposable
@@ -12,7 +11,7 @@ import java.io.Serializable
 open class BaseViewModel : ViewModel() {
     val arguments = Bundle()
 
-    internal val liveDatas = HashMap<String, MutableLiveData<out Serializable>?>()
+    internal val liveDatas = HashMap<String, UniqueMutableLiveData<out Serializable>?>()
 
     private val disposables = CompositeDisposable()
 
